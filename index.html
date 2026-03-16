@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Game Night 🎲 — Your Ultimate Party Planner</title>
+  <meta name="description" content="The ultimate Game Night planner — get personalized board game picks, live trivia, and mini-games powered by free public APIs." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ✨ Animated Background -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- 🎲 Floating dice decorations -->
+  <div class="floating-dice">
+    <span class="die d1">🎲</span>
+    <span class="die d2">🃏</span>
+    <span class="die d3">🎯</span>
+    <span class="die d4">🎮</span>
+    <span class="die d5">🏆</span>
+  </div>
+
+  <div class="app-wrapper">
+
+    <!-- ===== HEADER ===== -->
+    <header class="site-header">
+      <div class="header-logo">
+        <span class="logo-icon">🎲</span>
+        <span class="logo-text">GameNight</span>
+      </div>
+      <nav class="tab-nav" id="tabNav">
+        <button class="tab-btn active" data-tab="planner" id="tabPlanner">🗓️ Planner</button>
+        <button class="tab-btn" data-tab="trivia" id="tabTrivia">🧠 Trivia</button>
+        <button class="tab-btn" data-tab="minigames" id="tabMinigames">🎮 Mini-Games</button>
+        <button class="tab-btn" data-tab="scores" id="tabScores">🏆 Scores</button>
+      </nav>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="main-content">
+
+      <!-- ========= TAB: PLANNER ========= -->
+      <div class="tab-panel active" id="panel-planner">
+        <div class="hero-section">
+          <h1 class="hero-title">Tonight's <span class="gradient-text">Game Night</span></h1>
+          <p class="hero-subtitle">Tell us about your crew and we'll craft the perfect evening 🎉</p>
+        </div>
+
+        <div class="setup-card glass-card">
+          <div class="setup-grid">
+            <div class="setup-group">
+              <label class="setup-label" for="playerCount">👥 How many players?</label>
+              <div class="player-counter">
+                <button class="counter-btn" id="btnDecrement" onclick="adjustPlayers(-1)">−</button>
+                <span class="counter-display" id="playerDisplay">4</span>
+                <button class="counter-btn" id="btnIncrement" onclick="adjustPlayers(1)">+</button>
+              </div>
+            </div>
+            <div class="setup-group">
+              <label class="setup-label" for="vibeSelect">🎭 What's the vibe?</label>
+              <div class="custom-select-wrapper">
+                <select class="custom-select" id="vibeSelect">
+                  <option value="party">🎉 Party Mode — Loud & Chaotic</option>
+                  <option value="chill">😌 Chill Evening — Relaxed & Fun</option>
+                  <option value="competitive">⚔️ Competitive — Serious Gamers</option>
+                  <option value="family">👨‍👩‍👧 Family Friendly — All Ages</option>
+                  <option value="nerdy">🤓 Nerdy Night — Trivia & Strategy</option>
+                </select>
+              </div>
+            </div>
+            <div class="setup-group">
+              <label class="setup-label">⏱️ How long?</label>
+              <div class="duration-pills" id="durationPills">
+                <button class="pill active" data-value="short" onclick="selectDuration(this)">1h</button>
+                <button class="pill" data-value="medium" onclick="selectDuration(this)">2h</button>
+                <button class="pill" data-value="long" onclick="selectDuration(this)">3h+</button>
+              </div>
+            </div>
+          </div>
+          <button class="cta-btn" id="planBtn" onclick="generatePlan()">
+            <span class="btn-icon">✨</span>
+            Generate My Game Night!
+          </button>
+        </div>
+
+        <!-- Results -->
+        <div class="results-section" id="resultsSection" style="display:none">
+          <div class="results-header">
+            <h2 class="results-title">🎯 Your Perfect Game Night Plan</h2>
+            <button class="refresh-btn" onclick="generatePlan()" title="Regenerate">🔄</button>
+          </div>
+
+          <div class="cards-grid">
+            <!-- Board Game Card -->
+            <div class="result-card glass-card" id="boardGameCard">
+              <div class="card-badge">🎲 Board Game Pick</div>
+              <div class="card-loading" id="gameLoading">
+                <div class="spinner"></div>
+                <span>Finding the perfect game…</span>
+              </div>
+              <div class="card-content" id="gameContent" style="display:none">
+                <h3 class="card-title" id="gameName">—</h3>
+                <div class="card-meta" id="gameMeta"></div>
+                <p class="card-desc" id="gameDesc">—</p>
+                <div class="card-stats" id="gameStats"></div>
+              </div>
+            </div>
+
+            <!-- Warm-Up Card -->
+            <div class="result-card glass-card" id="warmupCard">
+              <div class="card-badge">🔥 Warm-Up Round</div>
+              <div class="warmup-content">
+                <div class="warmup-item" id="warmupActivity">
+                  <span class="warmup-icon">🎯</span>
+                  <div>
+                    <h3 class="warmup-title">Loading…</h3>
+                    <p class="warmup-desc">Fetching your warm-up…</p>
+                  </div>
+                </div>
+              </div>
+              <button class="mini-btn" onclick="switchToTrivia()">Start Trivia Warm-Up →</button>
+            </div>
+
+            <!-- Schedule Card -->
+            <div class="result-card glass-card wide-card" id="scheduleCard">
+              <div class="card-badge">📋 Tonight's Schedule</div>
+              <div class="schedule-list" id="scheduleList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========= TAB: TRIVIA ========= -->
+      <div class="tab-panel" id="panel-trivia">
+        <div class="trivia-header">
+          <h2 class="section-title">🧠 Live Trivia Battle</h2>
+          <p class="section-sub">Powered by Open Trivia Database — thousands of questions!</p>
+        </div>
+
+        <div class="trivia-controls glass-card">
+          <div class="trivia-options">
+            <div class="option-group">
+              <label class="setup-label">Category</label>
+              <select class="custom-select" id="triviaCategory">
+                <option value="any">🌀 Any Category</option>
+                <option value="9">📚 General Knowledge</option>
+                <option value="11">🎬 Film</option>
+                <option value="12">🎵 Music</option>
+                <option value="15">🎮 Video Games</option>
+                <option value="17">🔬 Science &amp; Nature</option>
+                <option value="18">💻 Computers</option>
+                <option value="21">⚽ Sports</option>
+                <option value="23">🏺 History</option>
+                <option value="31">🧩 Anime &amp; Manga</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="setup-label">Difficulty</label>
+              <select class="custom-select" id="triviaDifficulty">
+                <option value="any">🎲 Mixed</option>
+                <option value="easy">🟢 Easy</option>
+                <option value="medium">🟡 Medium</option>
+                <option value="hard">🔴 Hard</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="setup-label">Questions</label>
+              <select class="custom-select" id="triviaCount">
+                <option value="5">5 Questions</option>
+                <option value="10" selected>10 Questions</option>
+                <option value="15">15 Questions</option>
+                <option value="20">20 Questions</option>
+              </select>
+            </div>
+          </div>
+          <button class="cta-btn" id="startTriviaBtn" onclick="startTrivia()">
+            <span class="btn-icon">🚀</span>
+            Start Trivia Game!
+          </button>
+        </div>
+
+        <!-- Trivia Game Area -->
+        <div class="trivia-game" id="triviaGame" style="display:none">
+          <div class="trivia-progress">
+            <div class="progress-info">
+              <span id="questionCounter">Question 1 of 10</span>
+              <span class="score-display">Score: <strong id="triviaScore">0</strong></span>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar" id="triviaProgressBar"></div>
+            </div>
+          </div>
+
+          <div class="question-card glass-card" id="questionCard">
+            <div class="q-category" id="qCategory"></div>
+            <div class="q-difficulty" id="qDifficulty"></div>
+            <h3 class="question-text" id="questionText">Loading question…</h3>
+            <div class="answers-grid" id="answersGrid"></div>
+            <div class="q-feedback" id="qFeedback" style="display:none"></div>
+            <button class="mini-btn next-btn" id="nextBtn" style="display:none" onclick="nextQuestion()">Next Question →</button>
+          </div>
+
+          <button class="ghost-btn" onclick="endTrivia()">End Game</button>
+        </div>
+
+        <!-- Trivia Results -->
+        <div class="trivia-results glass-card" id="triviaResults" style="display:none">
+          <div class="result-emoji" id="resultEmoji">🏆</div>
+          <h3 class="result-headline" id="resultHeadline">Game Over!</h3>
+          <div class="final-score" id="finalScore">0 / 10</div>
+          <p class="result-flavour" id="resultFlavour"></p>
+          <div class="result-actions">
+            <button class="cta-btn" onclick="startTrivia()">Play Again 🔄</button>
+            <button class="ghost-btn" onclick="addTriviaScore()">Add to Scoreboard 🏆</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========= TAB: MINI-GAMES ========= -->
+      <div class="tab-panel" id="panel-minigames">
+        <div class="minigames-header">
+          <h2 class="section-title">🎮 Mini-Games</h2>
+          <p class="section-sub">Quick games to play between rounds</p>
+        </div>
+
+        <div class="minigame-tabs">
+          <button class="mg-tab active" data-mg="rps" onclick="selectMinigame(this, 'rps')">✊ RPS Duel</button>
+          <button class="mg-tab" data-mg="cards" onclick="selectMinigame(this, 'cards')">🃏 High Card</button>
+          <button class="mg-tab" data-mg="jeopardy" onclick="selectMinigame(this, 'jeopardy')">📺 Jeopardy Clue</button>
+        </div>
+
+        <!-- RPS 101 -->
+        <div class="minigame-panel glass-card" id="mg-rps">
+          <h3 class="mg-title">✊ Rock Paper Scissors (101 ways!)</h3>
+          <p class="mg-desc">The classic game — but with 101 possible gestures from the <strong>RPS 101 API</strong>. Two players each pick a number, the API decides the winner!</p>
+          <div class="rps-arena">
+            <div class="rps-player">
+              <label class="setup-label">Player 1 Choice</label>
+              <select class="custom-select" id="rpsP1">
+                <option value="">— Pick one —</option>
+              </select>
+            </div>
+            <div class="rps-vs">⚔️</div>
+            <div class="rps-player">
+              <label class="setup-label">Player 2 Choice</label>
+              <select class="custom-select" id="rpsP2">
+                <option value="">— Pick one —</option>
+              </select>
+            </div>
+          </div>
+          <button class="cta-btn" id="rpsBtn" onclick="playRPS()">
+            <span class="btn-icon">⚡</span>
+            Fight!
+          </button>
+          <div class="rps-result glass-card" id="rpsResult" style="display:none"></div>
+        </div>
+
+        <!-- High Card -->
+        <div class="minigame-panel glass-card" id="mg-cards" style="display:none">
+          <h3 class="mg-title">🃏 High Card Showdown</h3>
+          <p class="mg-desc">Each player draws a card from a shuffled deck. Highest card wins! Uses the <strong>Deck of Cards API</strong>.</p>
+          <div class="card-arena" id="cardArena">
+            <div class="draw-zone" id="drawZone">
+              <button class="card-draw-btn" id="shuffleBtn" onclick="shuffleDeck()">
+                🔀 Shuffle New Deck
+              </button>
+            </div>
+          </div>
+          <div class="card-players" id="cardPlayers"></div>
+          <div class="card-result glass-card" id="cardResult" style="display:none"></div>
+          <button class="cta-btn" id="dealBtn" style="display:none" onclick="dealCards()">
+            <span class="btn-icon">🃏</span>
+            Deal Cards!
+          </button>
+        </div>
+
+        <!-- Jeopardy -->
+        <div class="minigame-panel glass-card" id="mg-jeopardy" style="display:none">
+          <h3 class="mg-title">📺 Jeopardy Clue Challenge</h3>
+          <p class="mg-desc">Real Jeopardy clues from the <strong>jService API</strong>. One player reads, others answer in Jeopardy style — with "What is…?"</p>
+          <div class="jeopardy-category-picker">
+            <label class="setup-label">Pick a Category (optional)</label>
+            <select class="custom-select" id="jeopardyCat">
+              <option value="">🎲 Random Category</option>
+              <option value="science">Science</option>
+              <option value="history">History</option>
+              <option value="pop culture">Pop Culture</option>
+              <option value="sports">Sports</option>
+              <option value="geography">Geography</option>
+            </select>
+          </div>
+          <button class="cta-btn" onclick="loadJeopardyClue()">
+            <span class="btn-icon">📺</span>
+            Get a Clue!
+          </button>
+          <div class="jeopardy-card glass-card" id="jeopardyCard" style="display:none">
+            <div class="j-category" id="jCategory"></div>
+            <div class="j-value" id="jValue"></div>
+            <div class="j-clue" id="jClue"></div>
+            <button class="reveal-btn" id="revealBtn" onclick="revealAnswer()">Reveal Answer 👁️</button>
+            <div class="j-answer" id="jAnswer" style="display:none"></div>
+            <div class="j-actions" id="jActions" style="display:none">
+              <button class="correct-btn" onclick="jeopardyScore(true)">✅ Correct!</button>
+              <button class="wrong-btn" onclick="jeopardyScore(false)">❌ Wrong</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========= TAB: SCORES ========= -->
+      <div class="tab-panel" id="panel-scores">
+        <div class="scores-header">
+          <h2 class="section-title">🏆 Tonight's Scoreboard</h2>
+          <p class="section-sub">Track who's winning the evening</p>
+        </div>
+
+        <div class="scoreboard-setup glass-card" id="scoreboardSetup">
+          <h3 class="mg-title">Add Players</h3>
+          <div class="add-player-row">
+            <input type="text" class="player-input" id="newPlayerName" placeholder="Player name…" maxlength="20" onkeydown="if(event.key==='Enter') addPlayer()" />
+            <button class="cta-btn compact" onclick="addPlayer()">+ Add</button>
+          </div>
+          <div class="player-tags" id="playerTags"></div>
+        </div>
+
+        <div class="scoreboard-table-wrap" id="scoreboardWrap" style="display:none">
+          <div class="scoreboard-actions">
+            <button class="ghost-btn" onclick="resetScores()">🔄 Reset Scores</button>
+            <button class="ghost-btn danger" onclick="clearPlayers()">🗑️ Clear All</button>
+          </div>
+          <table class="scoreboard-table" id="scoreboardTable">
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Player</th>
+                <th>Trivia</th>
+                <th>Jeopardy</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="scoreboardBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Hall of shame / fame -->
+        <div class="hall-of-fame glass-card" id="hallOfFame" style="display:none">
+          <h3>🥇 Leading the Pack</h3>
+          <div class="leader-display" id="leaderDisplay"></div>
+        </div>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <p>Built with ❤️ using free public APIs — <a href="https://opentdb.com" target="_blank">OpenTDB</a> · <a href="http://deckofcardsapi.com" target="_blank">Deck of Cards</a> · <a href="https://rps101.pythonanywhere.com" target="_blank">RPS 101</a> · <a href="http://jservice.io" target="_blank">jService</a></p>
+    </footer>
+
+  </div><!-- end app-wrapper -->
+
+  <script src="app.js"></script>
+</body>
+</html>

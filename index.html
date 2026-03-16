@@ -55,6 +55,14 @@
         </div>
 
         <div class="setup-card glass-card">
+          <!-- ⚠️ No Players Joined Alert -->
+          <div id="noPlayersOverlay" class="setup-alert" style="display:none">
+            <div class="alert-content">
+              <h3>🎨 Who's playing tonight?</h3>
+              <p>Add some players in the <strong>Scores</strong> tab first to track your winner!</p>
+              <button class="cta-btn compact" onclick="switchToScoresTab()">Add Players Now 🏆</button>
+            </div>
+          </div>
           <div class="setup-grid">
             <div class="setup-group">
               <label class="setup-label" for="playerCount">👥 How many players?</label>
@@ -79,6 +87,8 @@
             <div class="setup-group">
               <label class="setup-label">⏱️ How long?</label>
               <div class="duration-pills" id="durationPills">
+                <button class="pill" data-value="10m" onclick="selectDuration(this)">10m</button>
+                <button class="pill" data-value="20m" onclick="selectDuration(this)">20m</button>
                 <button class="pill active" data-value="short" onclick="selectDuration(this)">1h</button>
                 <button class="pill" data-value="medium" onclick="selectDuration(this)">2h</button>
                 <button class="pill" data-value="long" onclick="selectDuration(this)">3h+</button>
@@ -111,6 +121,19 @@
                 <div class="card-meta" id="gameMeta"></div>
                 <p class="card-desc" id="gameDesc">—</p>
                 <div class="card-stats" id="gameStats"></div>
+                
+                <div class="card-actions-wrapper" id="gameActions" style="display:none">
+                  <div class="main-action">
+                    <button class="cta-btn compact" onclick="goToNextScheduleItem()">Mark Game as Completed ✅</button>
+                  </div>
+                  <div class="alt-digital-actions">
+                    <p>Playing digitally tonight?</p>
+                    <div class="mini-btn-group">
+                      <button class="mini-btn" onclick="switchToTrivia()">Full Trivia Game 🧠</button>
+                      <button class="mini-btn" onclick="switchToMinigames()">Mini-Games 🎮</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -126,12 +149,13 @@
                   </div>
                 </div>
               </div>
-              <button class="mini-btn" onclick="switchToTrivia()">Start Trivia Warm-Up →</button>
+              <button class="mini-btn" onclick="switchToTrivia(true)">Start Trivia Warm-Up →</button>
             </div>
 
             <!-- Schedule Card -->
             <div class="result-card glass-card wide-card" id="scheduleCard">
               <div class="card-badge">📋 Tonight's Schedule</div>
+              <p class="card-hint">Click any item to jump to that activity</p>
               <div class="schedule-list" id="scheduleList"></div>
             </div>
           </div>
@@ -219,7 +243,8 @@
           <p class="result-flavour" id="resultFlavour"></p>
           <div class="result-actions">
             <button class="cta-btn" onclick="startTrivia()">Play Again 🔄</button>
-            <button class="ghost-btn" onclick="addTriviaScore()">Add to Scoreboard 🏆</button>
+            <button class="ghost-btn" id="addTriviaScoreBtn" onclick="openPlayerScoreModal('trivia')">Add to Scoreboard 🏆</button>
+            <button class="mini-btn next-activity-btn" id="triviaToNext" style="display:none" onclick="goToNextScheduleItem()">Next: Main Game →</button>
           </div>
         </div>
       </div>
@@ -333,6 +358,7 @@
 
         <div class="scoreboard-table-wrap" id="scoreboardWrap" style="display:none">
           <div class="scoreboard-actions">
+            <button class="cta-btn compact" id="resumePlanBtn" onclick="switchToPlannerTab()">🏠 Resume Tonight's Plan</button>
             <button class="ghost-btn" onclick="resetScores()">🔄 Reset Scores</button>
             <button class="ghost-btn danger" onclick="clearPlayers()">🗑️ Clear All</button>
           </div>
@@ -364,6 +390,26 @@
     </footer>
 
   </div><!-- end app-wrapper -->
+
+  <!-- 🎭 Custom Modal for Player Selection (Replacing prompt) -->
+  <div class="modal-backdrop" id="playerModal">
+    <div class="modal-card glass-card">
+      <div class="modal-header">
+        <h3 id="modalTitle">Select Player</h3>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="modalDesc">Who gets the points?</p>
+        <div class="modal-player-list" id="modalPlayerList">
+          <!-- Players injected here -->
+        </div>
+        <div id="modalEmptyState" style="display:none">
+          <p>No players added yet!</p>
+          <button class="mini-btn" onclick="switchToScoresTab()">Add Players 🏆</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

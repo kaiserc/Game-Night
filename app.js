@@ -29,6 +29,11 @@ const state = {
   // Scoreboard
   scoreboard: {},   // { name: { trivia: 0, jeopardy: 0 } }
 
+  // Game Night Engine Tracking
+  sessionActive: false,
+  currentStepIndex: 0,
+  schedule: [],
+
   // Jeopardy
   jeopardyAnswer: '',
   jeopardyActivePlayer: null,
@@ -42,7 +47,16 @@ document.addEventListener('DOMContentLoaded', () => {
   initTabs();
   loadRPSObjects();
   loadScoreboard();
+  checkOnboarding();
 });
+
+function checkOnboarding() {
+  const hasPlayers = Object.keys(state.scoreboard).length > 0;
+  const overlay = document.getElementById('noPlayersOverlay');
+  if (overlay) {
+    overlay.style.display = hasPlayers ? 'none' : 'flex';
+  }
+}
 
 // =============================================
 // TAB NAVIGATION
@@ -75,8 +89,19 @@ function selectDuration(el) {
   state.duration = el.dataset.value;
 }
 
+function switchToPlannerTab() {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tabPlanner').classList.add('active');
+  document.getElementById('panel-planner').classList.add('active');
+  document.getElementById('panel-planner').scrollIntoView({ behavior: 'smooth' });
+}
+
 async function generatePlan() {
   state.vibe = document.getElementById('vibeSelect').value;
+  state.sessionActive = true;
+  state.currentStepIndex = 0;
+  
   const resultsSection = document.getElementById('resultsSection');
   resultsSection.style.display = 'block';
   resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -90,6 +115,7 @@ async function generatePlan() {
     buildSchedule(),
   ]);
 
+  state.schedule = scheduleItems;
   loadWarmup();
   renderSchedule(scheduleItems);
 }
@@ -97,11 +123,11 @@ async function generatePlan() {
 async function loadBoardGame() {
   // BGG top games — we pick a random one from a curated pool depending on vibe/player count
   const gamePools = {
-    party:       ['13823','1406','163696','316554','31481'],    // Codenames etc IDs
-    chill:       ['230802','68448','226884','172818','822'],
-    competitive: ['84876','12333','167355','72125','199792'],
-    family:      ['13823','9209','70323','822','171262'],
-    nerdy:       ['167791','161936','220308','224517','236457'],
+    party:       ['13823','1406','163696','316554','31481','171623','129623','324145'],
+    chill:       ['230802','68448','226884','172818','822','266192','233867','148228'],
+    competitive: ['84876','12333','167355','72125','199792','169786','161936','220308'],
+    family:      ['13823','9209','70323','822','171262','31481','235375','25292'],
+    nerdy:       ['167791','161936','220308','224517','236457','31260','50','193738'],
   };
 
   // Pick a random ID from the vibe pool
@@ -145,15 +171,31 @@ async function loadBoardGame() {
       </div>
     `;
   } catch (e) {
-    // Fallback if BGG is slow/blocked
+    // Fallback if BGG is slow/blocked/CORS
     const fallbacks = {
-      party:       { name: 'Codenames', desc: 'Two rival spymasters know the secret identities of 25 agents. Their teammates know the agents only by their codenames. Compete to see which team can contact all of their agents first.', players:'2–8', time:'15–30', rating:'7.6', complexity:'1.9' },
-      chill:       { name: 'Ticket to Ride', desc: 'Players collect cards of various types of train cars they then use to claim railway routes connecting cities throughout North America.', players:'2–5', time:'30–60', rating:'7.4', complexity:'1.9' },
-      competitive: { name: 'Catan', desc: 'Players try to be the dominant force on the island of Catan by building settlements, cities, and roads. On each turn dice are rolled to determine what resources the island produces.', players:'3–4', time:'60–120', rating:'7.2', complexity:'2.3' },
-      family:      { name: 'Azul', desc: 'Artisans have been commissioned to embellish the walls of the Royal Palace of Evora with magnificent azulejo tiles. Players draft colourful tiles to score points.', players:'2–4', time:'30–45', rating:'7.8', complexity:'1.8' },
-      nerdy:       { name: 'Terraforming Mars', desc: 'Corporations are competing to terraform Mars. Each player controls a corporation and buys and plays cards describing different projects to develop the planet.', players:'1–5', time:'120–180', rating:'8.4', complexity:'3.2' },
+      party: [
+        { name: 'Codenames', desc: 'Two rival spymasters know the secret identities of 25 agents. Teammates try to contact all of their agents first.', players:'2–8', time:'15–30', rating:'7.6', complexity:'1.9' },
+        { name: 'Dixit', desc: 'A multi-award-winning game of storytelling and intuition where players use beautiful artwork to bluff their opponents.', players:'3–6', time:'30', rating:'7.2', complexity:'1.2' }
+      ],
+      chill: [
+        { name: 'Ticket to Ride', desc: 'Collect cards of various types of train cars to claim railway routes connecting cities.', players:'2–5', time:'30–60', rating:'7.4', complexity:'1.9' },
+        { name: 'Wingspan', desc: 'Bird enthusiasts—researchers, bird watchers, ornithologists—seeking to discover and attract the best birds to your sanctuary.', players:'1–5', time:'40–70', rating:'8.1', complexity:'2.4' }
+      ],
+      competitive: [
+        { name: 'Catan', desc: 'Build settlements, cities, and roads on the island of Catan. Roll dice to determine what resources the island produces.', players:'3–4', time:'60–120', rating:'7.2', complexity:'2.3' },
+        { name: '7 Wonders', desc: 'You are the leader of one of the 7 great cities of the Ancient World. Gather resources, develop commercial routes, and affirm your military supremacy.', players:'2–7', time:'30', rating:'7.7', complexity:'2.3' }
+      ],
+      family: [
+        { name: 'Azul', desc: 'Artisans commission magnificent azulejo tiles. Draft colourful tiles to score points while decorated palace walls.', players:'2–4', time:'30–45', rating:'7.8', complexity:'1.8' },
+        { name: 'Splendor', desc: 'The Renaissance was a time of beauty and wealth. Players compete to collect gem tokens and purchase development cards.', players:'2–4', time:'30', rating:'7.4', complexity:'1.8' }
+      ],
+      nerdy: [
+        { name: 'Terraforming Mars', desc: 'Corporations compete to terraform Mars. Use projects to develop the planet and increase the oxygen level.', players:'1–5', time:'120–180', rating:'8.4', complexity:'3.2' },
+        { name: 'Gloomhaven', desc: 'A game of Euro-inspired tactical combat in a persistent world of shifting motives.', players:'1–4', time:'60–120', rating:'8.7', complexity:'3.9' }
+      ],
     };
-    const fb = fallbacks[state.vibe] || fallbacks.party;
+    const vibeList = fallbacks[state.vibe] || fallbacks.party;
+    const fb = randomFrom(vibeList);
     document.getElementById('gameName').textContent = fb.name;
     document.getElementById('gameDesc').textContent = fb.desc;
     document.getElementById('gameMeta').innerHTML = `
@@ -174,6 +216,7 @@ async function loadBoardGame() {
 
   document.getElementById('gameLoading').style.display = 'none';
   document.getElementById('gameContent').style.display = 'block';
+  document.getElementById('gameActions').style.display = 'block';
 }
 
 function loadWarmup() {
@@ -196,6 +239,8 @@ function loadWarmup() {
 
 function buildSchedule() {
   const durations = {
+    '10m':  { warmup: 3,  game1: 7,  break1: 0,  game2: 0,  wrap: 0  },
+    '20m':  { warmup: 5,  game1: 10, break1: 0,  game2: 0,  wrap: 5  },
     short:  { warmup: 10, game1: 30, break1: 5,  game2: 0,  wrap: 5  },
     medium: { warmup: 15, game1: 50, break1: 10, game2: 40, wrap: 10 },
     long:   { warmup: 20, game1: 60, break1: 15, game2: 60, wrap: 15 },
@@ -211,30 +256,37 @@ function buildSchedule() {
   };
 
   const games = vibeGames[state.vibe] || vibeGames.party;
-  let clock = 0;
   const fmt = m => `${m}m`;
 
   const items = [
-    { time: `0m`,           emoji: '🔥', text: 'Warm-Up Round',     duration: fmt(d.warmup) },
-    { time: fmt(d.warmup),  emoji: '🎲', text: games[0],            duration: fmt(d.game1) },
-    { time: fmt(d.warmup + d.game1), emoji: '☕', text: 'Break — snacks & scores!', duration: fmt(d.break1) },
+    { time: `0m`,           emoji: '🔥', text: 'Warm-Up Round',     value: d.warmup },
+    { time: fmt(d.warmup),  emoji: '🎲', text: games[0],            value: d.game1 },
+    { time: fmt(d.warmup + d.game1), emoji: '☕', text: 'Break — snacks & scores!', value: d.break1 },
   ];
 
   if (d.game2 > 0) {
     const breakStart = d.warmup + d.game1 + d.break1;
-    items.push({ time: fmt(breakStart), emoji: '🎮', text: games[1], duration: fmt(d.game2) });
-    items.push({ time: fmt(breakStart + d.game2), emoji: '🏆', text: 'Final Score & Crown your Champion!', duration: fmt(d.wrap) });
+    items.push({ time: fmt(breakStart), emoji: '🎮', text: games[1], value: d.game2 });
+    items.push({ time: fmt(breakStart + d.game2), emoji: '🏆', text: 'Final Score & Winner!', value: d.wrap });
   } else {
-    items.push({ time: fmt(d.warmup + d.game1 + d.break1), emoji: '🏆', text: 'Final Score & Crown your Champion!', duration: fmt(d.wrap) });
+    items.push({ time: fmt(d.warmup + d.game1 + d.break1), emoji: '🏆', text: 'Final Score & Winner!', value: d.wrap });
   }
 
-  return items;
+  // Map values to strings and filter out anything with 0 duration
+  return items
+    .filter(item => item.value > 0)
+    .map(item => ({
+      time: item.time,
+      emoji: item.emoji,
+      text: item.text,
+      duration: fmt(item.value)
+    }));
 }
 
 function renderSchedule(items) {
   const list = document.getElementById('scheduleList');
-  list.innerHTML = items.map(item => `
-    <div class="schedule-item">
+  list.innerHTML = items.map((item, i) => `
+    <div class="schedule-item ${state.currentStepIndex > i ? 'completed' : ''}" id="sched-item-${i}" onclick="jumpToActivity(${i})">
       <span class="schedule-time">${item.time}</span>
       <span class="schedule-emoji">${item.emoji}</span>
       <span class="schedule-text">${item.text}</span>
@@ -243,12 +295,65 @@ function renderSchedule(items) {
   `).join('');
 }
 
-function switchToTrivia() {
+function jumpToActivity(idx) {
+  state.currentStepIndex = idx;
+  renderSchedule(state.schedule);
+  const item = state.schedule[idx];
+  
+  if (item.text.toLowerCase().includes('warm-up')) {
+    switchToTrivia(true);
+  } else if (item.text.toLowerCase().includes('main board') || item.text.toLowerCase().includes('strategy')) {
+    switchToPlannerTab();
+    document.getElementById('boardGameCard').scrollIntoView({ behavior: 'smooth' });
+  } else if (item.text.toLowerCase().includes('trivia')) {
+    switchToTrivia(false);
+  } else if (item.text.toLowerCase().includes('mini-game')) {
+    switchToMinigames();
+  } else {
+    switchToPlannerTab();
+    showToast(`Current Activity: ${item.text}`);
+  }
+}
+
+function switchToTrivia(isWarmup = false) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tabTrivia').classList.add('active');
   document.getElementById('panel-trivia').classList.add('active');
   document.getElementById('panel-trivia').scrollIntoView({ behavior: 'smooth' });
+  
+  const nextBtn = document.getElementById('triviaToNext');
+  nextBtn.style.display = 'inline-flex';
+
+  if (isWarmup) {
+    document.getElementById('triviaCount').value = '5';
+    document.getElementById('triviaDifficulty').value = 'easy';
+    nextBtn.textContent = 'Next: Main Game →';
+  } else {
+    // Look ahead in schedule
+    const nextItem = state.schedule[state.currentStepIndex + 1];
+    nextBtn.textContent = nextItem ? `Next: ${nextItem.text} →` : 'Back to Plan →';
+  }
+}
+
+function switchToMinigames() {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tabMinigames').classList.add('active');
+  document.getElementById('panel-minigames').classList.add('active');
+}
+
+function goToNextScheduleItem() {
+  state.currentStepIndex++;
+  renderSchedule(state.schedule);
+  switchToPlannerTab();
+  
+  // Flash the next card
+  const nextCard = state.currentStepIndex === 1 ? 'boardGameCard' : 'scheduleCard';
+  const el = document.getElementById(nextCard);
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.style.boxShadow = '0 0 40px rgba(139, 92, 246, 0.8)';
+  setTimeout(() => el.style.boxShadow = '', 2000);
 }
 
 // =============================================
@@ -375,6 +480,13 @@ function endTrivia() {
 
   document.getElementById('finalScore').textContent = `${score} / ${total}`;
 
+  // Reset "add to scoreboard" button if it was disabled
+  const addBtn = document.getElementById('addTriviaScoreBtn');
+  if (addBtn) {
+    addBtn.disabled = false;
+    addBtn.textContent = 'Add to Scoreboard 🏆';
+  }
+
   const pct = score / total;
   let emoji, headline, flavour;
 
@@ -390,22 +502,23 @@ function endTrivia() {
   document.getElementById('resultFlavour').textContent  = flavour;
 }
 
-function addTriviaScore() {
-  if (!Object.keys(state.scoreboard).length) {
-    showToast('⚠️ Add players in the Scores tab first!');
+function addTriviaScore(playerName) {
+  if (!state.scoreboard[playerName]) {
+    showToast('Player not found!');
     return;
   }
 
-  const name = prompt('Which player completed this trivia round?\n' + Object.keys(state.scoreboard).join(', '));
-  if (!name || !state.scoreboard[name]) {
-    showToast('Player not found in scoreboard.');
-    return;
-  }
-
-  state.scoreboard[name].trivia += state.lastTriviaScore;
+  state.scoreboard[playerName].trivia += state.lastTriviaScore;
   saveScoreboard();
-  renderScoreboard();
-  showToast(`✅ Added ${state.lastTriviaScore} trivia points to ${name}!`);
+  renderScoreboardAnimated(playerName);
+  showToast(`✅ Added ${state.lastTriviaScore} trivia points to ${playerName}!`);
+  
+  // Disable button so they don't add twice
+  const addBtn = document.getElementById('addTriviaScoreBtn');
+  if (addBtn) {
+    addBtn.disabled = true;
+    addBtn.textContent = 'Points Added! ✅';
+  }
 }
 
 // =============================================
@@ -683,31 +796,85 @@ function revealAnswer() {
   document.getElementById('revealBtn').style.display = 'none';
 }
 
-function jeopardyScore(correct) {
-  if (!Object.keys(state.scoreboard).length) {
-    showToast('⚠️ Add players in the Scores tab first!');
+function jeopardyScore(playerName, correct) {
+  if (!state.scoreboard[playerName]) {
+    showToast('Player not found!');
     return;
   }
-
-  const names = Object.keys(state.scoreboard);
-  const name  = prompt(`Who answered? (${names.join(', ')})`);
-  if (!name || !state.scoreboard[name]) { showToast('Player not found!'); return; }
 
   const val = parseInt((document.getElementById('jValue').textContent || '$200').replace('$','')) || 200;
 
   if (correct) {
-    state.scoreboard[name].jeopardy += val;
-    showToast(`✅ +$${val} Jeopardy points for ${name}!`);
+    state.scoreboard[playerName].jeopardy += val;
+    showToast(`✅ +$${val} Jeopardy points for ${playerName}!`);
   } else {
-    state.scoreboard[name].jeopardy -= val;
-    showToast(`❌ -$${val} Jeopardy penalty for ${name}!`);
+    state.scoreboard[playerName].jeopardy -= val;
+    showToast(`❌ -$${val} Jeopardy penalty for ${playerName}!`);
   }
 
   saveScoreboard();
-  renderScoreboard();
+  renderScoreboardAnimated(playerName);
 
   // Load a fresh clue after scoring
   setTimeout(loadJeopardyClue, 800);
+}
+
+// =============================================
+// PLAYER MODAL HELPERS
+// =============================================
+
+function openPlayerScoreModal(type, isCorrect = true) {
+  const names = Object.keys(state.scoreboard);
+  const modal = document.getElementById('playerModal');
+  const list  = document.getElementById('modalPlayerList');
+  const empty = document.getElementById('modalEmptyState');
+  
+  if (!names.length) {
+    list.style.display = 'none';
+    empty.style.display = 'block';
+  } else {
+    list.style.display = 'flex';
+    empty.style.display = 'none';
+    
+    list.innerHTML = names.map(name => `
+      <button class="modal-player-btn" onclick="selectPlayerForScore('${escapeAttr(name)}', '${type}', ${isCorrect})">
+        <span>${name}</span>
+        <span class="player-rank">Score: ${state.scoreboard[name].trivia + state.scoreboard[name].jeopardy}</span>
+      </button>
+    `).join('');
+  }
+  
+  const titles = {
+    trivia: 'Award Trivia Points',
+    jeopardy: isCorrect ? 'Jeopardy: Correct!' : 'Jeopardy: Penalty'
+  };
+  document.getElementById('modalTitle').textContent = titles[type] || 'Select Player';
+  document.getElementById('modalDesc').textContent = type === 'trivia' 
+    ? `Who gets the ${state.lastTriviaScore} points?`
+    : `Which player answered this clue?`;
+
+  modal.classList.add('active');
+}
+
+function closeModal() {
+  document.getElementById('playerModal').classList.remove('active');
+}
+
+function selectPlayerForScore(name, type, isCorrect) {
+  closeModal();
+  if (type === 'trivia') {
+    addTriviaScore(name);
+  } else if (type === 'jeopardy') {
+    jeopardyScore(name, isCorrect);
+  }
+}
+
+function switchToScoresTab() {
+  closeModal();
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tabScores').classList.add('active');
+  document.getElementById('panel-scores').classList.add('active');
 }
 
 // =============================================
@@ -739,6 +906,7 @@ function addPlayer() {
   saveScoreboard();
   renderPlayerTags();
   renderScoreboard();
+  checkOnboarding();
 }
 
 function removePlayer(name) {
@@ -760,6 +928,10 @@ function renderPlayerTags() {
 }
 
 function renderScoreboard() {
+  renderScoreboardAnimated(null);
+}
+
+function renderScoreboardAnimated(highlightPlayer) {
   const names = Object.keys(state.scoreboard);
   const wrap  = document.getElementById('scoreboardWrap');
   const fame  = document.getElementById('hallOfFame');
@@ -785,12 +957,13 @@ function renderScoreboard() {
   body.innerHTML = sorted.map((p, i) => {
     const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : 'rank-n';
     const rankEmoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i + 1);
+    const isUpdating = p.name === highlightPlayer;
     return `
-      <tr>
+      <tr class="${isUpdating ? 'new-score' : ''}">
         <td><span class="rank-badge ${rankClass}">${rankEmoji}</span></td>
         <td><strong>${p.name}</strong></td>
         <td class="score-cell">${p.trivia}</td>
-        <td class="score-cell">${p.jeopardy > 0 ? '+' : ''}${p.jeopardy}</td>
+        <td class="score-cell">${p.jeopardy >= 0 ? '+' : ''}${p.jeopardy}</td>
         <td class="total-cell">${p.total}</td>
       </tr>
     `;

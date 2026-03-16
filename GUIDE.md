@@ -24,34 +24,28 @@ Simply open `index.html` in any modern web browser (Chrome, Firefox, Edge, Safar
 ### Step 2 — Set Up Players (Recommended First)
 Head to the **🏆 Scores** tab and add each player's name before the night begins. This allows scores to be tracked automatically as you play.
 
-### Step 3 — Plan Your Night
-Go back to the **🗓️ Planner** tab and configure your game night, then hit **Generate My Game Night!**
+### Step 2 — Plan Your Night (Onboarding)
+Go back to the **🗓️ Planner** tab. If you haven't added players yet, you'll see a "Who's playing?" prompt. Add players in the Scores tab to unlock the planner features.
 
 ---
 
 ## 2. The Planner Tab
 
-This is your home base for the evening. Fill in three settings and the app does the rest.
+This is your home base. The app acts as your "Digital Host."
 
 ### 👥 Player Count
-Use the **− / +** buttons to set how many people are playing (2–12). This informs the board game recommendation.
+Set your player count (1–12).
 
-### 🎭 Vibe Selector
-Choose the mood for your evening:
+### ⏱️ Duration & Lightning Rounds
+Pick your session length:
+- **10m / 20m** — **New!** Lightning sessions for quick fun.
+- **1h / 2h / 3h+** — Standard game night lengths.
 
-| Vibe | Best For |
-|------|----------|
-| 🎉 **Party Mode** | Loud, chaotic fun — big groups, lots of laughs |
-| 😌 **Chill Evening** | Relaxed games, no pressure |
-| ⚔️ **Competitive** | Serious gamers who want a real challenge |
-| 👨‍👩‍👧 **Family Friendly** | All ages — nothing too complex |
-| 🤓 **Nerdy Night** | Trivia lovers and strategy enthusiasts |
-
-### ⏱️ Duration
-Pick how long your evening runs:
-- **1h** — One main game + warm-up
-- **2h** — Two games + break
-- **3h+** — Full tournament-style evening
+### 📋 Interactive Schedule
+The schedule at the bottom isn't just for show:
+- **Click any item** to jump directly to that activity.
+- Items are marked **✅ Done** as you progress.
+- The "Director" will glow the next recommended card after you finish a step.
 
 ### ✨ Generate My Game Night!
 Hit the button and the app will:

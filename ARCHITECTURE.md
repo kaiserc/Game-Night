@@ -69,13 +69,13 @@ Key CSS techniques used:
 All JavaScript in a single file, structured into clearly labelled sections:
 
 ```
-STATE          — Single source of truth object
-BOOT           — DOMContentLoaded initialisation
+STATE          — Single source of truth (now includes Session Tracking)
+BOOT           — DOMContentLoaded initialisation & Onboarding check
 TAB NAVIGATION — Tab switching logic
-PLANNER        — BGG API, schedule builder, warmup
+PLANNER        — Director Engine, BGG API, schedule builder
 TRIVIA         — OpenTDB API, question renderer, scoring
 MINI-GAMES     — RPS 101, Deck of Cards, jService
-SCOREBOARD     — localStorage persistence, rendering
+SCOREBOARD     — localStorage persistence, rendering, animations
 UTILITIES      — decodeHTML, escapeAttr, toast, randomFrom
 ```
 
@@ -87,23 +87,15 @@ A single global `state` object is the source of truth for all transient data:
 
 ```js
 const state = {
+  // Director Engine
+  sessionActive: false,
+  currentStepIndex: 0,
+  schedule: [],
+
   players: 4,
   duration: 'medium',
   vibe: 'party',
-  deckId: null,           // Deck of Cards API session ID
-
-  triviaQuestions: [],    // Current batch of questions
-  currentQuestion: 0,
-  triviaScore: 0,
-  triviaTotal: 10,
-  answered: false,
-  lastTriviaScore: 0,     // For scoreboard submission
-
-  rpsObjects: [],         // Loaded from RPS 101 API on boot
-
-  scoreboard: {},         // { playerName: { trivia: n, jeopardy: n } }
-
-  jeopardyAnswer: '',
+  // ... (Other API states)
 };
 ```
 
@@ -118,25 +110,14 @@ const state = {
 **Format:** XML (parsed with `DOMParser`)  
 **Auth:** None
 
-BGG doesn't offer a free "random game" endpoint, so we maintain curated ID pools per vibe:
+The app uses curated ID pools (expanded to 8+ games per vibe).
 
-```js
-const gamePools = {
-  party:       ['13823','1406','163696','316554','31481'],
-  chill:       ['230802','68448','226884','172818','822'],
-  competitive: ['84876','12333','167355','72125','199792'],
-  family:      ['13823','9209','70323','822','171262'],
-  nerdy:       ['167791','161936','220308','224517','236457'],
-};
-```
-
-A random ID is selected from the vibe's pool on each generation. The XML response is parsed for: name, description, min/max players, play time, BGG rating, and weight (complexity).
-
-**Fallback:** Five hardcoded game objects (one per vibe) with pre-filled data.
+**Fallback:** An expanded library of 10+ hardcoded game objects (2 per vibe). When an API call fails, a random game is selected from the vibe's fallback list to ensure variety.
 
 ---
 
 ### 2. Open Trivia Database
+...
 **Endpoint:** `https://opentdb.com/api.php?amount={n}&type=multiple[&category={id}][&difficulty={level}]`  
 **Format:** JSON  
 **Auth:** None (rate-limited by session token optionally)
@@ -214,7 +195,19 @@ The answer is stored in `state.jeopardyAnswer` and only revealed when the player
 
 ---
 
+## 🔒 UX & UI Improvements
+
+### Custom Modal System
+To provide a premium feel, the app replaces browser `prompt()` and `confirm()` (where internal logic allows) with a custom **Glassmorphism Modal**.
+- **Dynamic Content**: Titles, descriptions, and buttons are injected via JS.
+- **Smart Logic**: Automatically filters players from the scoreboard to allow point assignment without typing.
+
+### Scoreboard Animations
+- **High-Fidelity Sorting**: Players move smoothly in the list when their ranking changes.
+- **Visual Feedback**: The `new-score` CSS class triggers a flash animation on the winning player's row to highlight where the points went.
+
 ## 🔒 Security Considerations
+...
 
 | Risk | Mitigation |
 |------|-----------|

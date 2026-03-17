@@ -37,6 +37,28 @@ const state = {
   // Jeopardy
   jeopardyAnswer: '',
   jeopardyActivePlayer: null,
+
+  // Hangman
+  hangmanWord: '',
+  hangmanGuessed: [],
+  hangmanMisses: 0,
+  hangmanMaxMisses: 6,
+  hangmanStatus: 'waiting', // waiting, playing, won, lost
+  hangmanDefinition: '',
+  hangmanHintUsed: 0,
+  hangmanFreeHints: false,
+
+  // Blackjack
+  bjPlayerHand: [],
+  bjDealerHand: [],
+  bjStatus: 'waiting', // waiting, playing, resolved
+
+  // Solitaire
+  solStock: [],
+  solWaste: [],
+  solFoundations: [[], [], [], []],
+  solTableau: [[], [], [], [], [], [], []],
+  solSelected: null, // { type: 'waste'|'tableau'|'foundation', pIdx, cIdx }
 };
 
 // =============================================
@@ -530,6 +552,10 @@ function selectMinigame(btn, id) {
   btn.classList.add('active');
   document.querySelectorAll('.minigame-panel').forEach(p => { p.style.display = 'none'; });
   document.getElementById(`mg-${id}`).style.display = 'block';
+
+  if (id === 'cards' && !state.deckId) shuffleBlackjackDeck();
+  if (id === 'hangman' && state.hangmanStatus === 'waiting') initHangman();
+  if (id === 'solitaire' && state.solStock.length === 0) initSolitaire();
 }
 
 // Show first panel on load
@@ -630,120 +656,432 @@ async function playRPS() {
   document.getElementById('rpsBtn').disabled = false;
 }
 
-// ----------- High Card -----------
+// ----------- Blackjack 21 -----------
 
-async function shuffleDeck() {
-  const btn = document.getElementById('shuffleBtn');
-  btn.textContent = '⏳ Shuffling…';
-  btn.disabled = true;
+async function startBlackjack() {
+  const resultEl = document.getElementById('bjResult');
+  const pHandEl = document.getElementById('playerHand');
+  const dHandEl = document.getElementById('dealerHand');
+  
+  resultEl.style.display = 'none';
+  pHandEl.innerHTML = '<div class="spinner"></div>';
+  dHandEl.innerHTML = '<div class="spinner"></div>';
+  
+  document.getElementById('bjInitialControls').style.display = 'none';
+  document.getElementById('bjActiveControls').style.display = 'none';
 
+  state.bjPlayerHand = [];
+  state.bjDealerHand = [];
+  state.bjStatus = 'playing';
+
+  // Ensure we have a deck
+  if (!state.deckId || state.deckId === 'local') {
+    await shuffleBlackjackDeck();
+  }
+
+  // Draw 2 for player, 2 for dealer
   try {
-    const res  = await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1');
+    const res = await fetch(`https://deckofcardsapi.com/api/deck/${state.deckId}/draw/?count=4`);
     const data = await res.json();
-    state.deckId = data.deck_id;
+    
+    if (!data.success) {
+      await shuffleBlackjackDeck();
+      return startBlackjack();
+    }
 
-    document.getElementById('dealBtn').style.display  = 'inline-flex';
-    document.getElementById('cardResult').style.display = 'none';
-    document.getElementById('cardPlayers').innerHTML = '';
-    btn.textContent = '✅ Deck Ready! Shuffle Again';
-    btn.disabled = false;
-    showToast('🃏 New deck shuffled! Ready to deal.');
+    state.bjPlayerHand = [data.cards[0], data.cards[1]];
+    state.bjDealerHand = [data.cards[2], data.cards[3]];
+
+    renderBlackjack();
+    document.getElementById('bjActiveControls').style.display = 'block';
+    
+    // Check for natural 21
+    if (calculateHand(state.bjPlayerHand) === 21) {
+      blackjackStand();
+    }
   } catch (e) {
-    btn.textContent = '🔀 Shuffle New Deck';
-    btn.disabled = false;
-    showToast('⚠️ Deck API unavailable — using local shuffle!');
-    state.deckId = 'local';
-    document.getElementById('dealBtn').style.display = 'inline-flex';
+    showToast('⚠️ Card API error — using local deck');
+    state.bjPlayerHand = [generateLocalCard(), generateLocalCard()];
+    state.bjDealerHand = [generateLocalCard(), generateLocalCard()];
+    renderBlackjack();
+    document.getElementById('bjActiveControls').style.display = 'block';
   }
 }
 
-async function dealCards() {
-  const count = state.players;
-  document.getElementById('cardResult').style.display = 'none';
-  document.getElementById('cardPlayers').innerHTML    = '';
+async function shuffleBlackjackDeck() {
+  try {
+    const res = await fetch('https://deckofcardsapi.com/api/deck/new/shuffle/?deck_count=1');
+    const data = await res.json();
+    state.deckId = data.deck_id;
+  } catch(e) {
+    state.deckId = 'local';
+  }
+}
 
-  if (!state.deckId) {
-    showToast('Shuffle a deck first!');
-    return;
+function renderBlackjack() {
+  const pHand = document.getElementById('playerHand');
+  const dHand = document.getElementById('dealerHand');
+  const pScore = document.getElementById('playerScore');
+  const dScore = document.getElementById('dealerScore');
+
+  pHand.innerHTML = state.bjPlayerHand.map(card => `
+    <div class="playing-card"><img src="${card.image}" alt="${card.value}"></div>
+  `).join('');
+
+  if (state.bjStatus === 'playing') {
+    // Hide dealer's second card
+    dHand.innerHTML = `
+      <div class="playing-card"><img src="${state.bjDealerHand[0].image}" alt="${state.bjDealerHand[0].value}"></div>
+      <div class="playing-card" style="background: var(--gradient-alt); display: flex; align-items: center; justify-content: center; font-size: 2rem;">❓</div>
+    `;
+    dScore.textContent = calculateHand([state.bjDealerHand[0]]);
+  } else {
+    dHand.innerHTML = state.bjDealerHand.map(card => `
+      <div class="playing-card"><img src="${card.image}" alt="${card.value}"></div>
+    `).join('');
+    dScore.textContent = calculateHand(state.bjDealerHand);
   }
 
-  let cards = [];
+  pScore.textContent = calculateHand(state.bjPlayerHand);
+}
 
-  if (state.deckId === 'local') {
-    cards = generateLocalCards(count);
-  } else {
-    try {
-      const res  = await fetch(`https://deckofcardsapi.com/api/deck/${state.deckId}/draw/?count=${count}`);
-      const data = await res.json();
+function calculateHand(hand) {
+  let total = 0;
+  let aces = 0;
 
-      if (!data.success || data.cards.length < count) {
-        // Re-shuffle
-        await fetch(`https://deckofcardsapi.com/api/deck/${state.deckId}/shuffle/`);
-        const res2  = await fetch(`https://deckofcardsapi.com/api/deck/${state.deckId}/draw/?count=${count}`);
-        const data2 = await res2.json();
-        cards = data2.cards;
-      } else {
-        cards = data.cards;
+  hand.forEach(card => {
+    if (card.value === 'ACE') {
+      aces++;
+      total += 11;
+    } else if (['KING', 'QUEEN', 'JACK'].includes(card.value.toUpperCase()) || parseInt(card.value) >= 10) {
+      total += 10;
+    } else {
+      total += parseInt(card.value) || 0;
+    }
+  });
+
+  while (total > 21 && aces > 0) {
+    total -= 10;
+    aces--;
+  }
+
+  return total;
+}
+
+async function blackjackHit() {
+  if (state.bjStatus !== 'playing') return;
+
+  try {
+    const res = await fetch(`https://deckofcardsapi.com/api/deck/${state.deckId}/draw/?count=1`);
+    const data = await res.json();
+    state.bjPlayerHand.push(data.cards[0]);
+    
+    renderBlackjack();
+
+    if (calculateHand(state.bjPlayerHand) > 21) {
+      resolveBlackjack('Bust! Dealer Wins 💀');
+    }
+  } catch (e) {
+    state.bjPlayerHand.push(generateLocalCard());
+    renderBlackjack();
+    if (calculateHand(state.bjPlayerHand) > 21) resolveBlackjack('Bust! Dealer Wins 💀');
+  }
+}
+
+async function blackjackStand() {
+  if (state.bjStatus !== 'playing') return;
+  state.bjStatus = 'resolved';
+
+  // Dealer plays
+  let dVal = calculateHand(state.bjDealerHand);
+  while (dVal < 17) {
+    if (state.deckId === 'local') {
+      state.bjDealerHand.push(generateLocalCard());
+    } else {
+      try {
+        const res = await fetch(`https://deckofcardsapi.com/api/deck/${state.deckId}/draw/?count=1`);
+        const data = await res.json();
+        state.bjDealerHand.push(data.cards[0]);
+      } catch(e) {
+        state.bjDealerHand.push(generateLocalCard());
       }
-    } catch (e) {
-      cards = generateLocalCards(count);
+    }
+    dVal = calculateHand(state.bjDealerHand);
+  }
+
+  renderBlackjack();
+
+  const pVal = calculateHand(state.bjPlayerHand);
+  if (dVal > 21) {
+    resolveBlackjack('Dealer Busts! You Win! 🏆');
+  } else if (dVal > pVal) {
+    resolveBlackjack('Dealer Wins 💀');
+  } else if (pVal > dVal) {
+    resolveBlackjack('You Win! 🏆');
+  } else {
+    resolveBlackjack('Push (Draw) 🤝');
+  }
+}
+
+function resolveBlackjack(msg) {
+  state.bjStatus = 'resolved';
+  const resultEl = document.getElementById('bjResult');
+  resultEl.style.display = 'block';
+  resultEl.textContent = msg;
+  
+  if (msg.includes('Win')) resultEl.className = 'bj-result glass-card result-win';
+  else if (msg.includes('Draw') || msg.includes('Push')) resultEl.className = 'bj-result glass-card result-push';
+  else resultEl.className = 'bj-result glass-card result-loss';
+
+  document.getElementById('bjInitialControls').style.display = 'block';
+  document.getElementById('bjActiveControls').style.display = 'none';
+  
+  renderBlackjack();
+}
+
+function generateLocalCard() {
+  const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'JACK', 'QUEEN', 'KING', 'ACE'];
+  const suits = ['HEARTS', 'DIAMONDS', 'CLUBS', 'SPADES'];
+  const v = randomFrom(values);
+  const s = randomFrom(suits);
+  return {
+    value: v,
+    suit: s,
+    image: `https://deckofcardsapi.com/static/img/${v === '10' ? '0' : v[0]}${s[0]}.png`
+  };
+}
+
+// ----------- Solitaire -----------
+
+function initSolitaire() {
+  const values = ['ACE', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'JACK', 'QUEEN', 'KING'];
+  const suits = ['CLUBS', 'DIAMONDS', 'HEARTS', 'SPADES'];
+  const fullDeck = [];
+  
+  // Build and shuffle
+  suits.forEach(s => values.forEach(v => {
+    fullDeck.push({
+      value: v,
+      suit: s,
+      image: `https://deckofcardsapi.com/static/img/${v === '10' ? '0' : v[0]}${s[0]}.png`,
+      color: (s === 'HEARTS' || s === 'DIAMONDS') ? 'red' : 'black',
+      val: values.indexOf(v) + 1,
+      hidden: true
+    });
+  }));
+  fullDeck.sort(() => Math.random() - 0.5);
+
+  // Clear state
+  state.solFoundations = [[], [], [], []];
+  state.solWaste = [];
+  state.solSelected = null;
+  state.solTableau = [[], [], [], [], [], [], []];
+
+  // Deal Tableau
+  for (let i = 0; i < 7; i++) {
+    for (let j = 0; j <= i; j++) {
+      const card = fullDeck.pop();
+      if (j === i) card.hidden = false;
+      state.solTableau[i].push(card);
     }
   }
 
-  const cardValues = { 'ACE':14,'KING':13,'QUEEN':12,'JACK':11,'10':10,'9':9,'8':8,'7':7,'6':6,'5':5,'4':4,'3':3,'2':2 };
-  const suitSymbols = { 'HEARTS':'♥','DIAMONDS':'♦','CLUBS':'♣','SPADES':'♠' };
-  const redSuits = ['HEARTS','DIAMONDS'];
+  // Rest to Stock
+  state.solStock = fullDeck.map(c => ({ ...c, hidden: true }));
+  
+  renderSolitaire();
+  showToast('🃏 Solitaire: Good luck!');
+}
 
-  // Find winner
-  const withValues = cards.map((c, i) => ({
-    ...c,
-    numVal: cardValues[c.value?.toUpperCase()] || parseInt(c.value) || 0,
-    player: i + 1,
-  }));
-  const maxVal = Math.max(...withValues.map(c => c.numVal));
+function renderSolitaire() {
+  const stock = document.getElementById('solStock');
+  const waste = document.getElementById('solWaste');
+  
+  // Render Stock
+  stock.innerHTML = state.solStock.length > 0 ? `<div class="sol-card back"></div>` : '';
+  
+  // Render Waste
+  waste.innerHTML = state.solWaste.map((c, i) => `
+    <div class="sol-card ${state.solSelected?.type==='waste' ? 'selected':''}" 
+         draggable="true"
+         ondragstart="handleSolDragStart(event, 'waste', 0, ${i})"
+         onclick="selectSolCard('waste', 0, ${i})">
+      <img src="${c.image}">
+    </div>
+  `).slice(-1).join(''); // Only show top card
 
-  const playerSlots = document.getElementById('cardPlayers');
-  const playerNames = Object.keys(state.scoreboard);
+  // Render Foundations
+  for (let i = 0; i < 4; i++) {
+    const f = document.getElementById(`f-${i}`);
+    const cards = state.solFoundations[i];
+    f.innerHTML = cards.length > 0 
+      ? `<div class="sol-card" draggable="true" ondragstart="handleSolDragStart(event, 'foundation', ${i}, ${cards.length-1})" onclick="selectSolCard('foundation', ${i}, ${cards.length-1})"><img src="${cards[cards.length-1].image}"></div>`
+      : '';
+    // Allow dropping on foundation
+    f.setAttribute('ondragover', 'event.preventDefault()');
+    f.setAttribute('ondrop', `handleSolDrop(event, 'foundation', ${i})`);
+  }
 
-  withValues.forEach((card, i) => {
-    const isWinner = card.numVal === maxVal;
-    const suit   = (card.suit || 'SPADES').toUpperCase();
-    const value  = (card.value || '?').toUpperCase();
-    const symbol = suitSymbols[suit] || '♠';
-    const isRed  = redSuits.includes(suit);
-    const pName  = playerNames[i] || `Player ${i + 1}`;
-
-    playerSlots.innerHTML += `
-      <div class="player-card-slot">
-        <div class="playing-card ${isRed ? 'red-card' : 'black-card'} ${isWinner ? 'winner-card' : ''}">
-          <div class="card-value">${value}</div>
-          <div class="card-suit">${symbol}</div>
+  // Render Tableau
+  for (let i = 0; i < 7; i++) {
+    const t = document.getElementById(`t-${i}`);
+    const cards = state.solTableau[i];
+    
+    t.innerHTML = cards.map((c, j) => {
+      const isSelected = state.solSelected?.type === 'tableau' && 
+                        state.solSelected.pIdx === i && 
+                        state.solSelected.cIdx === j;
+      const offset = j * 20;
+      const isDraggable = !c.hidden;
+      
+      return `
+        <div class="sol-card ${c.hidden ? 'back' : ''} ${isSelected ? 'selected' : ''}" 
+             style="top: ${offset}px; z-index: ${j}"
+             ${isDraggable ? `draggable="true" ondragstart="handleSolDragStart(event, 'tableau', ${i}, ${j})"` : ''}
+             onclick="handleTableauClick(${i}, ${j}, event)">
+          ${c.hidden ? '' : `<img src="${c.image}">`}
         </div>
-        <div class="card-player-name">${pName}</div>
-      </div>
-    `;
-  });
+      `;
+    }).join('');
 
-  const winners = withValues.filter(c => c.numVal === maxVal);
-  const resultEl = document.getElementById('cardResult');
-  resultEl.style.display = 'block';
-  if (winners.length > 1) {
-    const names = winners.map(w => playerNames[w.player - 1] || `Player ${w.player}`).join(' & ');
-    resultEl.innerHTML = `<div class="rps-winner">🤝 Tie! — ${names}</div>`;
-  } else {
-    const w = winners[0];
-    const wName = playerNames[w.player - 1] || `Player ${w.player}`;
-    resultEl.innerHTML = `<div class="rps-winner">🏆 ${wName} Wins!</div><div class="rps-detail">High card: ${w.value} of ${w.suit?.toLowerCase()}</div>`;
+    // If empty, add a click zone
+    if (cards.length === 0) {
+      t.innerHTML = `<div class="card-slot t-empty" style="position: absolute; top:0; left:0; width:100%; border:none" onclick="handleTableauClick(${i}, -1, event)"></div>`;
+    }
+    
+    // Allow dropping on tableau column
+    t.setAttribute('ondragover', 'event.preventDefault()');
+    t.setAttribute('ondrop', `handleSolDrop(event, 'tableau', ${i})`);
   }
 }
 
-function generateLocalCards(count) {
-  const values = ['2','3','4','5','6','7','8','9','10','JACK','QUEEN','KING','ACE'];
-  const suits  = ['HEARTS','DIAMONDS','CLUBS','SPADES'];
-  const deck   = [];
-  suits.forEach(s => values.forEach(v => deck.push({ value: v, suit: s })));
-  deck.sort(() => Math.random() - 0.5);
-  return deck.slice(0, count);
+function handleSolDragStart(e, type, pIdx, cIdx) {
+  state.solSelected = { type, pIdx, cIdx };
+  e.dataTransfer.setData('text/plain', JSON.stringify({ type, pIdx, cIdx }));
+  // Optional: Add a class for styling while dragging
+  setTimeout(() => e.target.classList.add('dragging'), 0);
+}
+
+function handleSolDrop(e, toType, toIdx) {
+  e.preventDefault();
+  if (!state.solSelected) return;
+
+  const movingCards = getSelectedCards();
+  if (toType === 'tableau') {
+    const targetPile = state.solTableau[toIdx];
+    if (canMoveToTableau(movingCards[0], targetPile[targetPile.length - 1])) {
+      executeMove('tableau', toIdx);
+    }
+  } else if (toType === 'foundation') {
+    const targetF = state.solFoundations[toIdx];
+    const topF = targetF[targetF.length - 1];
+    const card = movingCards[0];
+    if (movingCards.length === 1 && ((!topF && card.val === 1) || (topF && topF.suit === card.suit && card.val === topF.val + 1))) {
+      executeMove('foundation', toIdx);
+    }
+  }
+  state.solSelected = null;
+  renderSolitaire();
+}
+
+function drawFromStock() {
+  if (state.solStock.length === 0) {
+    // Recycle waste
+    state.solStock = state.solWaste.reverse().map(c => ({ ...c, hidden: true }));
+    state.solWaste = [];
+  } else {
+    const card = state.solStock.pop();
+    card.hidden = false;
+    state.solWaste.push(card);
+  }
+  state.solSelected = null;
+  renderSolitaire();
+}
+
+function selectSolCard(type, pIdx, cIdx) {
+  state.solSelected = { type, pIdx, cIdx };
+  renderSolitaire();
+}
+
+function handleTableauClick(pIdx, cIdx, e) {
+  e.stopPropagation();
+  const targetPile = state.solTableau[pIdx];
+  const targetCard = targetPile[cIdx];
+
+  // If we have a selection, try to move
+  if (state.solSelected) {
+    const movingCards = getSelectedCards();
+    if (canMoveToTableau(movingCards[0], targetPile[targetPile.length - 1])) {
+      executeMove('tableau', pIdx);
+      return;
+    }
+  }
+
+  // Otherwise, select
+  if (cIdx !== -1 && !targetCard.hidden) {
+    selectSolCard('tableau', pIdx, cIdx);
+  }
+}
+
+function getSelectedCards() {
+  const s = state.solSelected;
+  if (s.type === 'waste') return [state.solWaste[state.solWaste.length - 1]];
+  if (s.type === 'foundation') return [state.solFoundations[s.pIdx][s.cIdx]];
+  if (s.type === 'tableau') return state.solTableau[s.pIdx].slice(s.cIdx);
+  return [];
+}
+
+function canMoveToTableau(card, targetCard) {
+  if (!targetCard) return card.val === 13; // King to empty
+  return card.color !== targetCard.color && card.val === targetCard.val - 1;
+}
+
+function moveSelectedToFoundation(pIdx) {
+  if (!state.solSelected) return;
+  const cards = getSelectedCards();
+  if (cards.length !== 1) return;
+  
+  const card = cards[0];
+  const targetF = state.solFoundations[pIdx];
+  const topF = targetF[targetF.length - 1];
+
+  const canMove = (!topF && card.val === 1) || (topF && topF.suit === card.suit && card.val === topF.val + 1);
+
+  if (canMove) {
+    executeMove('foundation', pIdx);
+  }
+}
+
+function executeMove(toType, toIdx) {
+  const s = state.solSelected;
+  let cards;
+
+  // Remove from source
+  if (s.type === 'waste') cards = [state.solWaste.pop()];
+  if (s.type === 'foundation') cards = [state.solFoundations[s.pIdx].pop()];
+  if (s.type === 'tableau') {
+    cards = state.solTableau[s.pIdx].splice(s.cIdx);
+    // Flip new top card
+    if (state.solTableau[s.pIdx].length > 0) {
+      state.solTableau[s.pIdx][state.solTableau[s.pIdx].length - 1].hidden = false;
+    }
+  }
+
+  // Add to target
+  if (toType === 'tableau') state.solTableau[toIdx].push(...cards);
+  if (toType === 'foundation') state.solFoundations[toIdx].push(...cards);
+
+  state.solSelected = null;
+  renderSolitaire();
+  checkSolitaireWin();
+}
+
+function checkSolitaireWin() {
+  const total = state.solFoundations.reduce((acc, f) => acc + f.length, 0);
+  if (total === 52) {
+    document.getElementById('solHint').innerHTML = '🎊 CONGRATULATIONS! You won Solitaire!';
+    document.getElementById('solHint').style.color = 'var(--green)';
+  }
 }
 
 // ----------- Jeopardy -----------
@@ -815,8 +1153,158 @@ function jeopardyScore(playerName, correct) {
   saveScoreboard();
   renderScoreboardAnimated(playerName);
 
-  // Load a fresh clue after scoring
-  setTimeout(loadJeopardyClue, 800);
+  // Clear current clue and wait a beat before loading next
+  document.getElementById('jeopardyCard').style.display = 'none';
+  setTimeout(loadJeopardyClue, 1000);
+}
+
+// ----------- Hangman -----------
+
+async function initHangman() {
+  const btn = document.getElementById('newHangmanBtn');
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ Loading...';
+  
+  state.hangmanStatus = 'playing';
+  state.hangmanMisses = 0;
+  state.hangmanGuessed = [];
+  state.hangmanHintUsed = 0;
+  state.hangmanDefinition = '';
+  
+  const hintBtn = document.getElementById('hangmanHintBtn');
+  if (hintBtn) {
+    hintBtn.disabled = false;
+    hintBtn.textContent = '💡 Get a Hint (Costs 1 Life)';
+  }
+  
+  try {
+    const res = await fetch('https://random-word-api.herokuapp.com/word?number=1');
+    const data = await res.json();
+    state.hangmanWord = data[0].toUpperCase();
+  } catch (e) {
+    const fallbacks = ['GALAXY', 'ASTRONAUT', 'PLANET', 'STARS', 'ROCKET', 'COMET', 'METEOR', 'NEBULA'];
+    state.hangmanWord = randomFrom(fallbacks);
+    showToast('Using local word list (Offline)');
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'New Game 🔄';
+  
+  renderHangman();
+  buildHangmanKeyboard();
+}
+
+function renderHangman() {
+  const display = document.getElementById('hangmanWordDisplay');
+  const hint = document.getElementById('hangmanHint');
+  if (!display || !hint) return;
+  
+  // Show underscores or letters
+  display.innerHTML = state.hangmanWord.split('').map(char => 
+    state.hangmanGuessed.includes(char) ? char : '_'
+  ).join(' ');
+
+  // Update SVG parts
+  const parts = ['h-head', 'h-body', 'h-arm-l', 'h-arm-r', 'h-leg-l', 'h-leg-r'];
+  parts.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el) el.style.opacity = (i < state.hangmanMisses) ? '1' : '0';
+  });
+
+  // Check Win/Loss
+  const isWon = state.hangmanWord.split('').every(char => state.hangmanGuessed.includes(char));
+  const isLost = state.hangmanMisses >= state.hangmanMaxMisses;
+
+  if (isWon) {
+    state.hangmanStatus = 'won';
+    hint.textContent = '🎉 Mission Success! You saved the astronaut!';
+    hint.style.color = 'var(--green)';
+    disableHangmanKeyboard();
+    if (document.getElementById('hangmanHintBtn')) document.getElementById('hangmanHintBtn').disabled = true;
+  } else if (isLost) {
+    state.hangmanStatus = 'lost';
+    hint.textContent = `💀 Mission Failed. The word was: ${state.hangmanWord}`;
+    hint.style.color = 'var(--red)';
+    display.textContent = state.hangmanWord.split('').join(' '); // Reveal word
+    disableHangmanKeyboard();
+    if (document.getElementById('hangmanHintBtn')) document.getElementById('hangmanHintBtn').disabled = true;
+  } else {
+    hint.textContent = `Misses: ${state.hangmanMisses} / ${state.hangmanMaxMisses}`;
+    hint.style.color = 'var(--text-muted)';
+  }
+}
+
+function buildHangmanKeyboard() {
+  const kb = document.getElementById('hangmanKeyboard');
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  if (!kb) return;
+  kb.innerHTML = letters.map(l => `
+    <button class="kb-key" onclick="guessHangmanLetter('${l}', this)">${l}</button>
+  `).join('');
+}
+
+function guessHangmanLetter(letter, btn) {
+  if (state.hangmanStatus !== 'playing') return;
+  if (state.hangmanGuessed.includes(letter)) return;
+
+  btn.disabled = true;
+  state.hangmanGuessed.push(letter);
+
+  if (state.hangmanWord.includes(letter)) {
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+    state.hangmanMisses++;
+  }
+
+  renderHangman();
+}
+
+function disableHangmanKeyboard() {
+  document.querySelectorAll('.kb-key').forEach(btn => btn.disabled = true);
+}
+
+function toggleHangmanHints(el) {
+  state.hangmanFreeHints = el.checked;
+  const btn = document.getElementById('hangmanHintBtn');
+  if (btn) {
+    btn.textContent = state.hangmanFreeHints ? '💡 Get a Hint (FREE!)' : '💡 Get a Hint (Costs 1 Life)';
+  }
+}
+
+function useHangmanHint() {
+  if (state.hangmanStatus !== 'playing') return;
+  
+  if (!state.hangmanFreeHints && state.hangmanMisses >= state.hangmanMaxMisses - 1) {
+    showToast('Too dangerous! Only 1 life left!');
+    return;
+  }
+
+  // Find letters not yet guessed
+  const unhidden = state.hangmanWord.split('').filter(l => !state.hangmanGuessed.includes(l));
+  
+  if (unhidden.length === 0) return;
+
+  // Pick a random unhidden letter
+  const reveal = randomFrom(unhidden);
+  state.hangmanGuessed.push(reveal);
+  
+  if (!state.hangmanFreeHints) {
+    state.hangmanMisses++;
+  }
+  
+  state.hangmanHintUsed++;
+
+  // Update UI
+  const keyBtn = Array.from(document.querySelectorAll('.kb-key')).find(b => b.textContent === reveal);
+  if (keyBtn) {
+    keyBtn.disabled = true;
+    keyBtn.classList.add('correct');
+  }
+
+  showToast(`💡 Hint: The word contains "${reveal}"`);
+  renderHangman();
 }
 
 // =============================================

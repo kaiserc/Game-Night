@@ -26,8 +26,10 @@
 | Game | Description | API |
 |------|-------------|-----|
 | ✊ **RPS 101** | Rock Paper Scissors with 101 objects | RPS 101 API |
-| 🃏 **High Card** | Draw from a real shuffled deck — highest card wins | Deck of Cards API |
+| 🃏 **Blackjack 21**| Classic card game against the dealer | Deck of Cards API |
 | 📺 **Jeopardy Clues** | Real Jeopardy questions with scoring | jService API |
+| 🪓 **Hangman** | Guess the word with optional hints | Local Logic |
+| 🃏 **Solitaire** | Classic Klondike Solitaire with drag-and-drop | Local Logic |
 
 ### 🏆 Scoreboard
 - Add named players before the night begins

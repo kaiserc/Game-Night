@@ -113,18 +113,43 @@ A turbo-charged version of the classic using the **RPS 101 API** with 101 possib
 
 ---
 
-### 🃏 High Card Showdown
+### 🃏 Blackjack 21
 
-A dead-simple, zero-skill card game using a **real shuffled deck** from the Deck of Cards API.
+A classic card game where you try to beat the dealer by getting closer to 21 without going over. Powered by the **Deck of Cards API**.
 
 **How to play:**
-1. Click **🔀 Shuffle New Deck** to prepare a fresh 52-card deck
-2. Click **Deal Cards!** — each player (based on your player count setting) gets one face-up card
-3. Highest card wins — Ace is high
-4. In a tie, a second deal is needed
-5. The winner picks their seat, goes first, or gets a free point!
+1. Click **New Game** to start a fresh round.
+2. You and the dealer are dealt two cards each.
+3. Click **Hit** to take another card, or **Stand** to keep your current hand.
+4. Try to get as close to 21 as possible. If you go over, you "bust" and lose.
+5. The dealer must hit until they reach at least 17.
+6. The winner is the one with the higher hand that hasn't busted.
 
-**Card values:** `2 < 3 < 4 < … < 10 < J < Q < K < A`
+---
+
+### 🪓 Hangman
+
+A classic word-guessing game.
+
+**How to play:**
+1. Choose a category and difficulty (if available) or just hit **New Game**.
+2. Click letters on the on-screen keyboard to guess.
+3. If you get stuck, use the **Hint** button (note: the game master can toggle whether hints cost you a point in the settings).
+4. Save the person by guessing the word before the gallows are complete!
+
+---
+
+### 🃏 Klondike Solitaire
+
+The classic solo card game, now with full drag-and-drop support.
+
+**How to play:**
+1. **Move Cards:** You can click a card to move it to a valid spot, or **drag and drop** it directly.
+2. **Build Stacks:** Build stacks in the tableau by alternating colors and descending rank (e.g., a Red 9 on a Black 10).
+3. **Foundations:** Move all cards to the four foundation piles at the top, starting with Aces and building up by suit.
+4. **The Stock:** Click the stock pile to draw new cards when you're stuck.
+5. **Auto-moves:** Single-clicking a card will automatically try to find the best valid move for you.
+
 
 ---
 

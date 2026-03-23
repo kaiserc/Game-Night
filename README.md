@@ -26,8 +26,10 @@
 | Game | Description | API |
 |------|-------------|-----|
 | ✊ **RPS 101** | Rock Paper Scissors with 101 objects | RPS 101 API |
-| 🃏 **High Card** | Draw from a real shuffled deck — highest card wins | Deck of Cards API |
+| 🃏 **Blackjack 21**| Classic card game against the dealer | Deck of Cards API |
 | 📺 **Jeopardy Clues** | Real Jeopardy questions with scoring | jService API |
+| 🪓 **Hangman** | Guess the word with optional hints | Local Logic |
+| 🃏 **Solitaire** | Classic Klondike Solitaire with drag-and-drop | Local Logic |
 
 ### 🏆 Scoreboard
 - Add named players before the night begins
@@ -62,7 +64,7 @@ That's it. ✅
 | [Board Game Geek XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2) | Board game data | None |
 | [Deck of Cards API](https://deckofcardsapi.com/) | Shuffled card draws | None |
 | [RPS 101 API](https://rps101.pythonanywhere.com/api) | Rock Paper Scissors outcomes | None |
-| [jService](https://jservice.io/) | Jeopardy clues | None |
+| [jService](https://jservice.io/) (Offline) | Jeopardy clues | None |
 
 All APIs are **100% free** with no key or account required. The app includes robust offline fallbacks for all API calls.
 

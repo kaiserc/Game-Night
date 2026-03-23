@@ -175,7 +175,7 @@ The outcome endpoint returns `{ winner, outcome }` where `outcome` is a human-re
 ---
 
 ### 5. jService (Jeopardy)
-**Endpoint:** `https://jservice.io/api/random`  
+**Endpoint:** `https://jservice.io/api/random` (Note: Currently offline, returning 403 Forbidden)
 **Format:** JSON (array of 1 clue)  
 **Auth:** None
 

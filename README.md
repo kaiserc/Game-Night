@@ -64,7 +64,7 @@ That's it. ✅
 | [Board Game Geek XML API2](https://boardgamegeek.com/wiki/page/BGG_XML_API2) | Board game data | None |
 | [Deck of Cards API](https://deckofcardsapi.com/) | Shuffled card draws | None |
 | [RPS 101 API](https://rps101.pythonanywhere.com/api) | Rock Paper Scissors outcomes | None |
-| [jService](https://jservice.io/) | Jeopardy clues | None |
+| [jService](https://jservice.io/) (Offline) | Jeopardy clues | None |
 
 All APIs are **100% free** with no key or account required. The app includes robust offline fallbacks for all API calls.
 

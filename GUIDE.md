@@ -1,3 +1,4 @@
+
 # 🎮 Game Night — User Guide
 
 > Everything you need to run a perfect game night using the app.
@@ -219,3 +220,9 @@ The app is designed to work even when APIs are slow or unavailable:
 | jService | 5 pre-loaded Jeopardy clues |
 
 A toast notification will inform you when a fallback is being used.
+
+---
+
+## 8. Contributing
+
+We welcome contributions! If you're interested in helping improve Game Night, please check out our [Contributing Guide](CONTRIBUTING.md) for more information on how to get started.

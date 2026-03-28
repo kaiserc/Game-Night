@@ -37,8 +37,7 @@
         <span class="logo-text">GameNight</span>
       </div>
       <nav class="tab-nav" id="tabNav">
-        <button class="tab-btn active" data-tab="planner" id="tabPlanner">🗓️ Planner</button>
-        <button class="tab-btn" data-tab="trivia" id="tabTrivia">🧠 Trivia</button>
+        <button class="tab-btn active" data-tab="trivia" id="tabTrivia">🧠 Trivia</button>
         <button class="tab-btn" data-tab="minigames" id="tabMinigames">🎮 Mini-Games</button>
         <button class="tab-btn" data-tab="scores" id="tabScores">🏆 Scores</button>
       </nav>
@@ -47,123 +46,8 @@
     <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
 
-      <!-- ========= TAB: PLANNER ========= -->
-      <div class="tab-panel active" id="panel-planner">
-        <div class="hero-section">
-          <h1 class="hero-title">Tonight's <span class="gradient-text">Game Night</span></h1>
-          <p class="hero-subtitle">Tell us about your crew and we'll craft the perfect evening 🎉</p>
-        </div>
-
-        <div class="setup-card glass-card">
-          <!-- ⚠️ No Players Joined Alert -->
-          <div id="noPlayersOverlay" class="setup-alert" style="display:none">
-            <div class="alert-content">
-              <h3>🎨 Who's playing tonight?</h3>
-              <p>Add some players in the <strong>Scores</strong> tab first to track your winner!</p>
-              <button class="cta-btn compact" onclick="switchToScoresTab()">Add Players Now 🏆</button>
-            </div>
-          </div>
-          <div class="setup-grid">
-            <div class="setup-group">
-              <label class="setup-label" for="playerCount">👥 How many players?</label>
-              <div class="player-counter">
-                <button class="counter-btn" id="btnDecrement" onclick="adjustPlayers(-1)">−</button>
-                <span class="counter-display" id="playerDisplay">4</span>
-                <button class="counter-btn" id="btnIncrement" onclick="adjustPlayers(1)">+</button>
-              </div>
-            </div>
-            <div class="setup-group">
-              <label class="setup-label" for="vibeSelect">🎭 What's the vibe?</label>
-              <div class="custom-select-wrapper">
-                <select class="custom-select" id="vibeSelect">
-                  <option value="party">🎉 Party Mode — Loud & Chaotic</option>
-                  <option value="chill">😌 Chill Evening — Relaxed & Fun</option>
-                  <option value="competitive">⚔️ Competitive — Serious Gamers</option>
-                  <option value="family">👨‍👩‍👧 Family Friendly — All Ages</option>
-                  <option value="nerdy">🤓 Nerdy Night — Trivia & Strategy</option>
-                </select>
-              </div>
-            </div>
-            <div class="setup-group">
-              <label class="setup-label">⏱️ How long?</label>
-              <div class="duration-pills" id="durationPills">
-                <button class="pill" data-value="10m" onclick="selectDuration(this)">10m</button>
-                <button class="pill" data-value="20m" onclick="selectDuration(this)">20m</button>
-                <button class="pill active" data-value="short" onclick="selectDuration(this)">1h</button>
-                <button class="pill" data-value="medium" onclick="selectDuration(this)">2h</button>
-                <button class="pill" data-value="long" onclick="selectDuration(this)">3h+</button>
-              </div>
-            </div>
-          </div>
-          <button class="cta-btn" id="planBtn" onclick="generatePlan()">
-            <span class="btn-icon">✨</span>
-            Generate My Game Night!
-          </button>
-        </div>
-
-        <!-- Results -->
-        <div class="results-section" id="resultsSection" style="display:none">
-          <div class="results-header">
-            <h2 class="results-title">🎯 Your Perfect Game Night Plan</h2>
-            <button class="refresh-btn" onclick="generatePlan()" title="Regenerate">🔄</button>
-          </div>
-
-          <div class="cards-grid">
-            <!-- Board Game Card -->
-            <div class="result-card glass-card" id="boardGameCard">
-              <div class="card-badge">🎲 Board Game Pick</div>
-              <div class="card-loading" id="gameLoading">
-                <div class="spinner"></div>
-                <span>Finding the perfect game…</span>
-              </div>
-              <div class="card-content" id="gameContent" style="display:none">
-                <h3 class="card-title" id="gameName">—</h3>
-                <div class="card-meta" id="gameMeta"></div>
-                <p class="card-desc" id="gameDesc">—</p>
-                <div class="card-stats" id="gameStats"></div>
-                
-                <div class="card-actions-wrapper" id="gameActions" style="display:none">
-                  <div class="main-action">
-                    <button class="cta-btn compact" onclick="goToNextScheduleItem()">Mark Game as Completed ✅</button>
-                  </div>
-                  <div class="alt-digital-actions">
-                    <p>Playing digitally tonight?</p>
-                    <div class="mini-btn-group">
-                      <button class="mini-btn" onclick="switchToTrivia()">Full Trivia Game 🧠</button>
-                      <button class="mini-btn" onclick="switchToMinigames()">Mini-Games 🎮</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Warm-Up Card -->
-            <div class="result-card glass-card" id="warmupCard">
-              <div class="card-badge">🔥 Warm-Up Round</div>
-              <div class="warmup-content">
-                <div class="warmup-item" id="warmupActivity">
-                  <span class="warmup-icon">🎯</span>
-                  <div>
-                    <h3 class="warmup-title">Loading…</h3>
-                    <p class="warmup-desc">Fetching your warm-up…</p>
-                  </div>
-                </div>
-              </div>
-              <button class="mini-btn" onclick="switchToTrivia(true)">Start Trivia Warm-Up →</button>
-            </div>
-
-            <!-- Schedule Card -->
-            <div class="result-card glass-card wide-card" id="scheduleCard">
-              <div class="card-badge">📋 Tonight's Schedule</div>
-              <p class="card-hint">Click any item to jump to that activity</p>
-              <div class="schedule-list" id="scheduleList"></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- ========= TAB: TRIVIA ========= -->
-      <div class="tab-panel" id="panel-trivia">
+      <div class="tab-panel active" id="panel-trivia">
         <div class="trivia-header">
           <h2 class="section-title">🧠 Live Trivia Battle</h2>
           <p class="section-sub">Powered by Open Trivia Database — thousands of questions!</p>
@@ -205,7 +89,7 @@
               </select>
             </div>
           </div>
-          <button class="cta-btn" id="startTriviaBtn" onclick="startTrivia()">
+          <button class="cta-btn" id="startTriviaBtn">
             <span class="btn-icon">🚀</span>
             Start Trivia Game!
           </button>
@@ -229,10 +113,10 @@
             <h3 class="question-text" id="questionText">Loading question…</h3>
             <div class="answers-grid" id="answersGrid"></div>
             <div class="q-feedback" id="qFeedback" style="display:none"></div>
-            <button class="mini-btn next-btn" id="nextBtn" style="display:none" onclick="nextQuestion()">Next Question →</button>
+            <button class="mini-btn next-btn" id="nextBtn" style="display:none">Next Question →</button>
           </div>
 
-          <button class="ghost-btn" onclick="endTrivia()">End Game</button>
+          <button class="ghost-btn">End Game</button>
         </div>
 
         <!-- Trivia Results -->
@@ -242,9 +126,9 @@
           <div class="final-score" id="finalScore">0 / 10</div>
           <p class="result-flavour" id="resultFlavour"></p>
           <div class="result-actions">
-            <button class="cta-btn" onclick="startTrivia()">Play Again 🔄</button>
-            <button class="ghost-btn" id="addTriviaScoreBtn" onclick="openPlayerScoreModal('trivia')">Add to Scoreboard 🏆</button>
-            <button class="mini-btn next-activity-btn" id="triviaToNext" style="display:none" onclick="goToNextScheduleItem()">Next: Main Game →</button>
+            <button class="cta-btn">Play Again 🔄</button>
+            <button class="ghost-btn" id="addTriviaScoreBtn">Add to Scoreboard 🏆</button>
+            <button class="mini-btn next-activity-btn" id="triviaToNext" style="display:none">Next: Main Game →</button>
           </div>
         </div>
       </div>
@@ -257,11 +141,11 @@
         </div>
 
         <div class="minigame-tabs">
-          <button class="mg-tab active" data-mg="rps" onclick="selectMinigame(this, 'rps')">✊ RPS Duel</button>
-          <button class="mg-tab" data-mg="cards" onclick="selectMinigame(this, 'cards')">🃏 Blackjack 21</button>
-          <button class="mg-tab" data-mg="solitaire" onclick="selectMinigame(this, 'solitaire')">🃏 Solitaire</button>
-          <button class="mg-tab" data-mg="hangman" onclick="selectMinigame(this, 'hangman')">😵 Hangman</button>
-          <button class="mg-tab" data-mg="jeopardy" onclick="selectMinigame(this, 'jeopardy')">📺 Jeopardy Clue</button>
+          <button class="mg-tab active" data-mg="rps">✊ RPS Duel</button>
+          <button class="mg-tab" data-mg="cards">🃏 Blackjack 21</button>
+          <button class="mg-tab" data-mg="solitaire">🃏 Solitaire</button>
+          <button class="mg-tab" data-mg="hangman">😵 Hangman</button>
+          <button class="mg-tab" data-mg="jeopardy">📺 Jeopardy Clue</button>
         </div>
 
         <!-- RPS 101 -->
@@ -283,7 +167,7 @@
               </select>
             </div>
           </div>
-          <button class="cta-btn" id="rpsBtn" onclick="playRPS()">
+          <button class="cta-btn" id="rpsBtn">
             <span class="btn-icon">⚡</span>
             Fight!
           </button>
@@ -319,11 +203,11 @@
 
           <div class="bj-controls">
             <div id="bjInitialControls">
-              <button class="cta-btn" onclick="startBlackjack()">Deal New Hand 🃏</button>
+              <button class="cta-btn">Deal New Hand 🃏</button>
             </div>
             <div id="bjActiveControls" style="display:none">
-              <button class="cta-btn compact" onclick="blackjackHit()">Hit +</button>
-              <button class="ghost-btn compact" onclick="blackjackStand()">Stand 🛑</button>
+              <button class="cta-btn compact">Hit +</button>
+              <button class="ghost-btn compact">Stand 🛑</button>
             </div>
           </div>
 
@@ -334,7 +218,7 @@
         <div class="minigame-panel glass-card" id="mg-solitaire" style="display:none">
           <div class="mg-header-actions">
             <h3 class="mg-title">🃏 Klondike Solitaire</h3>
-            <button class="cta-btn compact" onclick="initSolitaire()">New Game 🔄</button>
+            <button class="cta-btn compact">New Game 🔄</button>
           </div>
           <p class="mg-desc">The classic single-player card game. Move all cards to the foundations to win!</p>
           
@@ -342,14 +226,14 @@
             <!-- Top Row: Stock & Waste + Foundations -->
             <div class="solitaire-top">
               <div class="solitaire-stock-waste">
-                <div class="card-slot stock" id="solStock" onclick="drawFromStock()"></div>
+                <div class="card-slot stock" id="solStock"></div>
                 <div class="card-slot waste" id="solWaste"></div>
               </div>
               <div class="solitaire-foundations">
-                <div class="card-slot foundation" id="f-0" onclick="moveSelectedToFoundation(0)"></div>
-                <div class="card-slot foundation" id="f-1" onclick="moveSelectedToFoundation(1)"></div>
-                <div class="card-slot foundation" id="f-2" onclick="moveSelectedToFoundation(2)"></div>
-                <div class="card-slot foundation" id="f-3" onclick="moveSelectedToFoundation(3)"></div>
+                <div class="card-slot foundation" id="f-0"></div>
+                <div class="card-slot foundation" id="f-1"></div>
+                <div class="card-slot foundation" id="f-2"></div>
+                <div class="card-slot foundation" id="f-3"></div>
               </div>
             </div>
             
@@ -394,19 +278,19 @@
             <div class="hangman-game-area">
             <div class="hangman-host-controls glass-card mini-card">
               <label class="checkbox-label">
-                <input type="checkbox" id="hangmanFreeHints" onchange="toggleHangmanHints(this)">
+                <input type="checkbox" id="hangmanFreeHints">
                 <span>💡 Hints are Free (Host Only)</span>
               </label>
             </div>
             <div class="hangman-word" id="hangmanWordDisplay">_ _ _ _ _</div>
               <div class="hangman-hint-wrap">
-                <button class="ghost-btn mini-btn" id="hangmanHintBtn" onclick="useHangmanHint()" style="margin: 0 auto;">💡 Get a Hint (Costs 1 Life)</button>
+                <button class="ghost-btn mini-btn" id="hangmanHintBtn" style="margin: 0 auto;">💡 Get a Hint (Costs 1 Life)</button>
               </div>
               <div class="hangman-hint" id="hangmanHint">Guess a letter to start</div>
               <div class="hangman-keyboard" id="hangmanKeyboard"></div>
               
               <div class="hangman-controls">
-                <button class="cta-btn compact" id="newHangmanBtn" onclick="initHangman()">New Game 🔄</button>
+                <button class="cta-btn compact" id="newHangmanBtn">New Game 🔄</button>
               </div>
             </div>
           </div>
@@ -427,7 +311,7 @@
               <option value="geography">Geography</option>
             </select>
           </div>
-          <button class="cta-btn" onclick="loadJeopardyClue()">
+          <button class="cta-btn">
             <span class="btn-icon">📺</span>
             Get a Clue!
           </button>
@@ -435,11 +319,11 @@
             <div class="j-category" id="jCategory"></div>
             <div class="j-value" id="jValue"></div>
             <div class="j-clue" id="jClue"></div>
-            <button class="reveal-btn" id="revealBtn" onclick="revealAnswer()">Reveal Answer 👁️</button>
+            <button class="reveal-btn" id="revealBtn">Reveal Answer 👁️</button>
             <div class="j-answer" id="jAnswer" style="display:none"></div>
             <div class="j-actions" id="jActions" style="display:none">
-              <button class="correct-btn" onclick="openPlayerScoreModal('jeopardy', true)">✅ Correct!</button>
-              <button class="wrong-btn" onclick="openPlayerScoreModal('jeopardy', false)">❌ Wrong</button>
+              <button class="correct-btn">✅ Correct!</button>
+              <button class="wrong-btn">❌ Wrong</button>
             </div>
           </div>
         </div>
@@ -455,17 +339,17 @@
         <div class="scoreboard-setup glass-card" id="scoreboardSetup">
           <h3 class="mg-title">Add Players</h3>
           <div class="add-player-row">
-            <input type="text" class="player-input" id="newPlayerName" placeholder="Player name…" maxlength="20" onkeydown="if(event.key==='Enter') addPlayer()" />
-            <button class="cta-btn compact" onclick="addPlayer()">+ Add</button>
+            <input type="text" class="player-input" id="newPlayerName" placeholder="Player name…" maxlength="20" />
+            <button class="cta-btn compact">+ Add</button>
           </div>
           <div class="player-tags" id="playerTags"></div>
         </div>
 
         <div class="scoreboard-table-wrap" id="scoreboardWrap" style="display:none">
           <div class="scoreboard-actions">
-            <button class="cta-btn compact" id="resumePlanBtn" onclick="switchToPlannerTab()">🏠 Resume Tonight's Plan</button>
-            <button class="ghost-btn" onclick="resetScores()">🔄 Reset Scores</button>
-            <button class="ghost-btn danger" onclick="clearPlayers()">🗑️ Clear All</button>
+
+            <button class="ghost-btn">🔄 Reset Scores</button>
+            <button class="ghost-btn danger">🗑️ Clear All</button>
           </div>
           <table class="scoreboard-table" id="scoreboardTable">
             <thead>
@@ -501,7 +385,7 @@
     <div class="modal-card glass-card">
       <div class="modal-header">
         <h3 id="modalTitle">Select Player</h3>
-        <button class="modal-close" onclick="closeModal()">×</button>
+        <button class="modal-close">×</button>
       </div>
       <div class="modal-body">
         <p id="modalDesc">Who gets the points?</p>
@@ -510,12 +394,12 @@
         </div>
         <div id="modalEmptyState" style="display:none">
           <p>No players added yet!</p>
-          <button class="mini-btn" onclick="switchToScoresTab()">Add Players 🏆</button>
+          <button class="mini-btn">Add Players 🏆</button>
         </div>
       </div>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

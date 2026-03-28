@@ -95,18 +95,20 @@ game-night/
 
 ---
 
-## 📝 License
-
-MIT © 2026 — Free to use, fork, and extend.
-
----
-
 ## 🤝 Contributing
 
-Found a bug or want to add a new mini-game? PRs are welcome!
+Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
-1. Fork the repo
-2. Create your feature branch (`git checkout -b feature/new-minigame`)
-3. Commit your changes (`git commit -m 'Add: new mini-game'`)
-4. Push to the branch (`git push origin feature/new-minigame`)
-5. Open a Pull Request
+For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
+
+You can learn more about how you can contribute to this project in the [contributing guide](CONTRIBUTING.md).
+
+### Code of Conduct
+
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code.
+
+### License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
